@@ -45,6 +45,10 @@
                        | {send, environment(), [abstract_expr()], stack(), message()}
                        | {rec, environment(), [abstract_expr()], stack(), message()}.
 
+-type history_map() :: [history_map_entry()].
+-type history_map_entry() :: {}.
+
+
 -type stack() :: [stack_entry()].
 -type stack_entry() :: {mfa(), environment(), [abstract_expr()], af_variable()}
                      | {atom(), [abstract_expr()], af_variable()}.
