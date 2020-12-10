@@ -35,6 +35,8 @@
 -type process_map() :: #{proc_id() := process()}. % Not empty
 -type proc_id() :: pos_integer().
 -type process() :: #proc{}.
+-type map_element() :: {atom(), proc_id()}.
+
 
 -type history() :: [history_entry()].
 -type history_entry() :: {tau, environment(), [abstract_expr()], stack()}
