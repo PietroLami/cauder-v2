@@ -46,7 +46,11 @@
   % System log
   logs = maps:new() :: cauder_types:log_map(),
   trace = [] :: [cauder_types:trace()],
-  roll = []
+  roll = [],
+  % Map
+  map = [] :: [cauder_types:map_element()],
+  % History Map
+  hmap = [] :: [cauder_types:history_map()]
 }).
 
 %% Process
