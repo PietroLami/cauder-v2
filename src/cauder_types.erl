@@ -33,7 +33,7 @@
                    | {'receive', msg_id()}.
 
 -type process_map() :: #{proc_id() := process()}. % Not empty
--type proc_id() :: pos_integer().
+-type proc_id() :: pos_integer() | atom().
 -type process() :: #proc{}.
 -type map_element() :: {atom(), proc_id()}.
 
@@ -45,11 +45,15 @@
                        | {send, environment(), [abstract_expr()], stack(), message()}
                        | {rec, environment(), [abstract_expr()], stack(), message()}
                        | {'end', environment(), [abstract_expr()], stack(), map_element()}
-                       | {fail, environment(), [abstract_expr()], stack()}.
+                       | {fail, environment(), [abstract_expr()], stack()}
+                       | {registerT, environment(), [abstract_expr()], stack(), map_element()}
+                       | {registerF, environment(), [abstract_expr()], stack(), map_element()}.
 
 
 -type history_map() :: [history_map_entry()].
--type history_map_entry() :: {'end', [map_element()], proc_id(), [] }.
+-type history_map_entry() :: {'end',     [map_element()], proc_id(), []}
+                           | {registerT, [map_element()], proc_id(), []}
+                           | {registerF, [map_element()], proc_id(), []}.
 
 
 -type stack() :: [stack_entry()].
@@ -61,7 +65,7 @@
 
 -type option() :: #opt{}.
 -type semantics() :: ?FWD_SEM | ?BWD_SEM.
--type rule() :: ?RULE_SEQ | ?RULE_SELF | ?RULE_SPAWN | ?RULE_SEND | ?RULE_RECEIVE.
+-type rule() :: ?RULE_SEQ | ?RULE_SELF | ?RULE_SPAWN | ?RULE_SEND | ?RULE_RECEIVE | ?RULE_END | ?RULE_REGISTER.
 
 -type trace() :: #trace{}.
 
@@ -73,7 +77,8 @@
                | {self, af_variable()}
                | {send, proc_id(), term()}
                | {rec, af_variable(), af_clause_seq()}
-               | {bottom, line(), term()}.
+               | {bottom, line(), term()}
+               | {register, atom(), line(),atom(), proc_id()}.
 
 
 
@@ -101,7 +106,8 @@
                        | af_apply_fun()
                        | af_match(abstract_expr())
                        | af_op(abstract_expr())
-                       | af_short_circuit_op(abstract_expr()).
+                       | af_short_circuit_op(abstract_expr())
+                       | af_register().
 
 -type af_args() :: [abstract_expr()].
 
@@ -148,6 +154,8 @@
 -type af_unary_arith_op(T) :: {op, line(), '+' | '-', [T]}.
 
 -type af_short_circuit_op(T) :: {'andalso' | 'orelse', line(), T, T}.
+
+-type af_register() :: {register, line(), abstract_expr(), abstract_expr()}.
 
 
 %% Clauses

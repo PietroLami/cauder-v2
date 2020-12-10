@@ -121,7 +121,33 @@ step(#sys{mail = Ms, logs = LMap, trace = Trace, map = Map, hmap = Hmap} = Sys, 
             hmap = NewHMap,
             map = NewMap
           }
-      end
+      end;
+    {registerT, Bs, Es, Stk, {A,Pi}} ->
+      P = P0#proc{
+        hist  = RestHist,
+        stack = Stk,
+        env   = Bs,
+        exprs = Es
+      },
+      NewHMap = lists:delete({registerT, [{A,Pi}], Pid, []},Hmap),
+      NewMap = lists:delete({A,Pi}, Map),
+      Sys#sys{
+        procs = PMap#{Pid => P},
+        hmap = NewHMap,
+        map = NewMap
+      };
+    {registerF, Bs, Es, Stk, {A,Pi}} ->
+      P = P0#proc{
+        hist  = RestHist,
+        stack = Stk,
+        env   = Bs,
+        exprs = Es
+      },
+      NewHMap = lists:delete({registerF, [{A,Pi}], Pid, []}, Hmap),
+      Sys#sys{
+        procs = PMap#{Pid => P},
+        hmap = NewHMap
+      }
   end.
 
 
@@ -182,7 +208,17 @@ process_option(#sys{mail = Mail}, #proc{pid = Pid, hist = [{send, _Bs, _Es, _Stk
 process_option(_, #proc{pid = Pid, hist = [{rec, _Bs, _Es, _Stk, _Msg} | _]}) ->
   #opt{sem = ?MODULE, pid = Pid, rule = ?RULE_RECEIVE};
 process_option(#sys{hmap = Hmap}, #proc{pid = Pid, hist = [{'end', _Bs, _Es, _Stk, El}| _]}) ->
-  case cauder_utils:rule_mapW({'end', [El], Pid, []},Hmap) of
+  case cauder_utils:rule_mapW({'end', [El], Pid, []}, Hmap) of
     true  ->   #opt{sem = ?MODULE, pid = Pid, rule = ?RULE_END};
+    false ->   ?NULL_OPT
+  end;
+process_option(#sys{hmap = Hmap}, #proc{pid = Pid, hist = [{registerT, _Bs, _Es, _Stk, El}| _]}) ->
+  case cauder_utils:rule_mapW({registerT, [El], Pid, []}, Hmap) of
+    true  ->   #opt{sem = ?MODULE, pid = Pid, rule = ?RULE_REGISTER};
+    false ->   ?NULL_OPT
+  end;
+process_option(#sys{hmap = Hmap}, #proc{pid = Pid, hist = [{registerF, _Bs, _Es, _Stk, El}| _]}) ->
+  case cauder_utils:rule_mapW({registerF, [El], Pid, []}, Hmap) of
+    true  ->   #opt{sem = ?MODULE, pid = Pid, rule = ?RULE_REGISTER};
     false ->   ?NULL_OPT
   end.

@@ -20,6 +20,8 @@
 -export([is_conc_item/1]).
 -export([matchMap/2]).
 -export([rule_mapW/2]).
+-export([mapActor/1]).
+-export([getPid/2]).
 
 -include("cauder.hrl").
 
@@ -537,12 +539,14 @@ is_dead(#proc{})                                    -> false.
   HistoryEntry :: cauder_types:history_entry(),
   IsConcurrent :: boolean().
 
-is_conc_item({tau, _Bs, _Es, _Stk})         -> false;
-is_conc_item({self, _Bs, _Es, _Stk})        -> false;
-is_conc_item({spawn, _Bs, _Es, _Stk, _Pid}) -> true;
-is_conc_item({send, _Bs, _Es, _Stk, _Msg})  -> true;
-is_conc_item({rec, _Bs, _Es, _Stk, _Msg})   -> true;
-is_conc_item(_)                             -> false.
+is_conc_item({tau, _Bs, _Es, _Stk})              -> false;
+is_conc_item({self, _Bs, _Es, _Stk})             -> false;
+is_conc_item({spawn, _Bs, _Es, _Stk, _Pid})      -> true;
+is_conc_item({send, _Bs, _Es, _Stk, _Msg})       -> true;
+is_conc_item({rec, _Bs, _Es, _Stk, _Msg})        -> true;
+is_conc_item({registerT, _Bs, _Es, _Stk, _El})   -> true;
+is_conc_item({registerF, _Bs, _Es, _Stk, _El})   -> true;
+is_conc_item(_)                                  -> false.
 
 
 
@@ -573,3 +577,35 @@ not_in({A,P}, [ A | T])    ->
     _ -> false
   end;
 not_in(El, [_ | T])        -> not_in(El, T).
+
+mapActor(Map1) ->
+  receive
+    {{A,P}, SenderPid} ->
+      K = notInMap({A,P},Map1),
+       SenderPid ! K,
+       mapActor(Map1);
+    {map, SenderPid} ->
+      SenderPid ! Map1,
+      mapActor(Map1);
+    {pid, Atom, SenderPid} ->
+      SenderPid ! getPid(Atom,Map1),
+      mapActor(Map1);
+    {A, SenderPid} ->
+      K = inMap(A,Map1),
+       SenderPid ! K,
+       mapActor(Map1);
+    _ -> dead
+  end.
+
+notInMap({_,_}, []) -> true;
+notInMap({A,_},[{A,_} | _]) -> false;
+notInMap({_,P},[{_,P} | _]) -> false;
+notInMap({A,P},[{_,_} | T]) -> notInMap({A,P},T).
+
+inMap(_, []) -> false;
+inMap(A,[{A,_} | _]) -> true;
+inMap(A,[{_,_} | T]) -> inMap(A,T).
+
+getPid(_, []) -> undefined;
+getPid(Atom, [{Atom,Pid} | _]) -> Pid;
+getPid(Atom, [{_,_} | T]) -> getPid(Atom,T).

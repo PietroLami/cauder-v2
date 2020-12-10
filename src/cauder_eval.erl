@@ -1,9 +1,12 @@
 -module(cauder_eval).
 
 %% API
--export([seq/3, abstract/1, concrete/1, is_value/1, is_reducible/2]).
+-export([seq/4, abstract/1, concrete/1, is_value/1, is_reducible/2]).
 -export([match_rec_pid/4, match_rec_uid/4]).
 -export([clause_line/3]).
+
+-import(cauder_utils, [mapActor/1]).
+
 
 -include("cauder.hrl").
 
@@ -52,14 +55,17 @@ eval_list(Bs, [E | Es], Stk) ->
 %%
 %% @see is_reducible/2
 
--spec seq(Bindings, Expressions, Stack) -> Result when
+-spec seq(Bindings, Expressions, Stack, System) -> Result when
   Bindings :: cauder_types:environment(),
   Expressions :: [cauder_types:abstract_expr()],
   Stack :: cauder_types:stack(),
+  System :: cauder_types:system(),
   Result :: cauder_types:result().
 
-seq(Bs, [E | Es], Stk) ->
-  case is_reducible(E, Bs) of
+seq(Bs, [E | Es], Stk, System) ->
+  #sys{map = Map} = System,
+  register(mymaps,spawn(fun () -> cauder_utils:mapActor(Map) end)),
+  Res = case is_reducible(E, Bs) of
     false ->
       case Es of
         [] ->
@@ -87,7 +93,9 @@ seq(Bs, [E | Es], Stk) ->
         _ ->
           #result{env = Bs1, exprs = Es1 ++ Es, stack = Stk1, label = L}
       end
-  end.
+  end,
+  unregister(mymaps),
+  Res.
 
 
 %%------------------------------------------------------------------------------
@@ -375,8 +383,24 @@ expr(Bs, E = {'orelse', Line, Lhs, Rhs}, Stk) ->
               #result{env = Bs, exprs = [{value, Line, Value}], stack = Stk}
           end
       end
-  end.
+  end;
 
+expr(Bs, E = {register, L, Atom, Pid}, Stk) ->
+   case is_reducible(Atom,Bs) of
+     true  -> eval_and_update({Bs, Atom, Stk}, {3, E});
+     false ->
+       case is_reducible(Pid,Bs) of
+         true  -> eval_and_update({Bs, Pid, Stk}, {4, E});
+         false ->
+           mymaps ! {{concrete(Atom), concrete(Pid)}, self()},
+            {IsFail, K} = receive
+              true  -> {false, true};
+              false -> {true, false}
+            end,
+            Label = {register, IsFail, L, concrete(Atom), concrete(Pid)},
+            #result{env = Bs, exprs = [{value,L,K}], stack = Stk, label = Label}
+      end
+  end.
 
 %%%=============================================================================
 
