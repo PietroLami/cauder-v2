@@ -43,10 +43,12 @@
                        | {self, environment(), [abstract_expr()], stack()}
                        | {spawn, environment(), [abstract_expr()], stack(), proc_id()}
                        | {send, environment(), [abstract_expr()], stack(), message()}
-                       | {rec, environment(), [abstract_expr()], stack(), message()}.
+                       | {rec, environment(), [abstract_expr()], stack(), message()}
+                       | {'end', environment(), [abstract_expr()], stack(), map_element()}.
+
 
 -type history_map() :: [history_map_entry()].
--type history_map_entry() :: {}.
+-type history_map_entry() :: {'end', [map_element()], proc_id(), [] }.
 
 
 -type stack() :: [stack_entry()].

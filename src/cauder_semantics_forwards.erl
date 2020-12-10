@@ -12,6 +12,7 @@
 -export([step/2, options/1]).
 
 -import(cauder_eval, [is_reducible/2]).
+-import(cauder_utils, [matchMap/2]).
 
 -include("cauder.hrl").
 
@@ -30,22 +31,61 @@
   Pid :: cauder_types:proc_id(),
   NewSystem :: cauder_types:system().
 
-step(#sys{mail = Ms, logs = LMap, trace = Trace} = Sys, Pid) ->
+step(#sys{mail = Ms, logs = LMap, trace = Trace, map = Map, hmap = Hmap} = Sys, Pid) ->
   {#proc{pid = Pid, hist = Hist, stack = Stk0, env = Bs0, exprs = Es0} = P0, PMap} = maps:take(Pid, Sys#sys.procs),
 
   #result{env = Bs, exprs = Es, stack = Stk, label = Label} = cauder_eval:seq(Bs0, Es0, Stk0),
 
   case Label of
     tau ->
-      P = P0#proc{
-        hist  = [{tau, Bs0, Es0, Stk0} | Hist],
-        stack = Stk,
-        env   = Bs,
-        exprs = Es
-      },
-      Sys#sys{
-        procs = PMap#{Pid => P}
-      };
+      case Stk of
+        [] ->
+          case Es of
+            [{value, _, _}] ->
+              Atom = cauder_utils:matchMap(Pid,Map),
+              NewMap = lists:delete({Atom,Pid}, Map),
+              % case per atomo se presente. (se non è presente undefined (ricorda non è possibile registrare Pid morto))
+              % nessun problema viene per backward si mette sempre nella storia della mappa end (e quindi il pid è presente)
+              % TODO controllo su processo morto non può essere registrato
+              Newh = [{'end', [{Atom,Pid}], Pid, []} | Hmap],
+              P = P0#proc{
+                hist  = [{'end', Bs0, Es0, Stk0, {Atom, Pid}} | Hist],
+                stack = Stk,
+                env   = Bs,
+                exprs = Es
+              },
+              Sys#sys{
+                procs = PMap#{Pid => P},
+                hmap =  Newh,
+                map = NewMap
+              };
+            _ ->
+              P = P0#proc{
+                hist  = [{tau, Bs0, Es0, Stk0} | Hist],
+                stack = Stk,
+                env   = Bs,
+                exprs = Es
+              },
+              Sys#sys{
+                procs = PMap#{Pid => P}
+              }
+          end;
+        _ ->
+          P = P0#proc{
+            hist  = [{tau, Bs0, Es0, Stk0} | Hist],
+            stack = Stk,
+            env   = Bs,
+            exprs = Es
+          },
+          Sys#sys{
+            procs = PMap#{Pid => P}
+          }
+      end;
+
+
+
+
+
     {self, VarPid} ->
       P = P0#proc{
         hist  = [{self, Bs0, Es0, Stk0} | Hist],

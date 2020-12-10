@@ -22,6 +22,8 @@
 -define(RULE_SPAWN,    spawn).
 -define(RULE_SEND,     send).
 -define(RULE_RECEIVE, 'receive').
+-define(RULE_END, 'end').
+
 
 
 -define(REPLAY_DATA,  200).

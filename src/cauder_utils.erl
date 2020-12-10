@@ -18,6 +18,8 @@
 -export([load_replay_data/1]).
 -export([current_line/1, is_dead/1]).
 -export([is_conc_item/1]).
+-export([matchMap/2]).
+-export([rule_mapW/2]).
 
 -include("cauder.hrl").
 
@@ -539,4 +541,35 @@ is_conc_item({tau, _Bs, _Es, _Stk})         -> false;
 is_conc_item({self, _Bs, _Es, _Stk})        -> false;
 is_conc_item({spawn, _Bs, _Es, _Stk, _Pid}) -> true;
 is_conc_item({send, _Bs, _Es, _Stk, _Msg})  -> true;
-is_conc_item({rec, _Bs, _Es, _Stk, _Msg})   -> true.
+is_conc_item({rec, _Bs, _Es, _Stk, _Msg})   -> true;
+is_conc_item(_)                             -> false.
+
+
+
+%%------------------------------------------------------------------------------
+%% @doc Map utils
+
+matchMap(_,[]) -> undefined;
+matchMap(Pid, [{Atom,Pid} | _]) -> Atom;
+matchMap(Pid,[{_,_}|T]) -> matchMap(Pid,T).
+
+rule_mapW(Rule,[Rule | _]) -> true;
+rule_mapW({Rule, [{A,P}], Pid, []}, [ {_, L, _, _} | T]) ->
+  case not_in({A,P}, L) of
+    true  -> rule_mapW({Rule, [{A,P}], Pid, []},T);
+    false -> false
+  end.
+
+not_in(_, []) -> true;
+not_in({_,P}, [{_,P} | _]) -> false;
+not_in({A,P}, [{A,_} | T]) ->
+  case A of
+    undefined -> not_in({A,P}, T);
+    _ -> false
+  end;
+not_in({A,P}, [ A | T])    ->
+  case A of
+    undefined -> not_in({A,P}, T);
+    _ -> false
+  end;
+not_in(El, [_ | T])        -> not_in(El, T).

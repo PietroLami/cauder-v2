@@ -489,7 +489,8 @@ rule_to_string(?RULE_SEQ)     -> "Seq";
 rule_to_string(?RULE_SELF)    -> "Self";
 rule_to_string(?RULE_SPAWN)   -> "Spawn";
 rule_to_string(?RULE_SEND)    -> "Send";
-rule_to_string(?RULE_RECEIVE) -> "Receive".
+rule_to_string(?RULE_RECEIVE) -> "Receive";
+rule_to_string(?RULE_END) -> "End".
 
 
 -spec time_to_string(Time) -> String when

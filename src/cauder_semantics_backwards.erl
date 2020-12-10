@@ -7,6 +7,7 @@
 
 %% API
 -export([step/2, options/1]).
+-import(cauder_utils, [rule_mapW/2]).
 
 -include("cauder.hrl").
 
@@ -25,7 +26,7 @@
   Pid :: cauder_types:proc_id(),
   NewSystem :: cauder_types:system().
 
-step(#sys{mail = Ms, logs = LMap, trace = Trace} = Sys, Pid) ->
+step(#sys{mail = Ms, logs = LMap, trace = Trace, map = Map, hmap = Hmap} = Sys, Pid) ->
   {#proc{pid = Pid, hist = [Entry | RestHist]} = P0, PMap} = maps:take(Pid, Sys#sys.procs),
 
   case Entry of
@@ -97,7 +98,30 @@ step(#sys{mail = Ms, logs = LMap, trace = Trace} = Sys, Pid) ->
         procs = PMap#{Pid => P},
         logs  = maps:update_with(Pid, fun(Log) -> [{'receive', Uid} | Log] end, [], LMap),
         trace = lists:delete(T, Trace)
-      }
+      };
+    {'end', Bs, Es, Stk, {A,Pi}} ->
+      P = P0#proc{
+        hist  = RestHist,
+        stack = Stk,
+        env   = Bs,
+        exprs = Es
+      },
+      NewHMap = lists:delete({'end', [{A,Pi}], Pid, []}, Hmap),
+      case A of
+        undefined ->
+          Sys#sys{
+            mail  = Ms,
+            hmap = NewHMap,
+            procs = PMap#{Pid => P}
+          };
+        _ ->
+          NewMap = [ {A,Pi} | Map],
+          Sys#sys{
+            procs = PMap#{Pid => P},
+            hmap = NewHMap,
+            map = NewMap
+          }
+      end
   end.
 
 
@@ -154,4 +178,9 @@ process_option(#sys{mail = Mail}, #proc{pid = Pid, hist = [{send, _Bs, _Es, _Stk
     false -> ?NULL_OPT
   end;
 process_option(_, #proc{pid = Pid, hist = [{rec, _Bs, _Es, _Stk, _Msg} | _]}) ->
-  #opt{sem = ?MODULE, pid = Pid, rule = ?RULE_RECEIVE}.
+  #opt{sem = ?MODULE, pid = Pid, rule = ?RULE_RECEIVE};
+process_option(#sys{hmap = Hmap}, #proc{pid = Pid, hist = [{'end', _Bs, _Es, _Stk, El}| _]}) ->
+  case cauder_utils:rule_mapW({'end', [El], Pid, []},Hmap) of
+    true  ->   #opt{sem = ?MODULE, pid = Pid, rule = ?RULE_END};
+    false ->   ?NULL_OPT
+  end.

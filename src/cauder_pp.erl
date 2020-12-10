@@ -49,7 +49,8 @@ history_entry({tau, _Bs, _Es, _Stk})                              -> "seq";
 history_entry({self, _Bs, _Es, _Stk})                             -> "self";
 history_entry({spawn, _Bs, _Es, _Stk, Pid})                       -> "spawn(" ++ green(to_string(Pid)) ++ ")";
 history_entry({send, _Bs, _Es, _Stk, #msg{val = Val, uid = Uid}}) -> "send(" ++ to_string(Val) ++ "," ++ red(to_string(Uid)) ++ ")";
-history_entry({rec, _Bs, _Es, _Stk, #msg{val = Val, uid = Uid}})  -> "rec(" ++ to_string(Val) ++ "," ++ blue(to_string(Uid)) ++ ")".
+history_entry({rec, _Bs, _Es, _Stk, #msg{val = Val, uid = Uid}})  -> "rec(" ++ to_string(Val) ++ "," ++ blue(to_string(Uid)) ++ ")";
+history_entry({'end', _Bs, _Es, _Stk, {A, P}})                    -> "end(" ++ to_string(A) ++ "," ++ to_string(P) ++ ")".
 
 
 %%%=============================================================================
