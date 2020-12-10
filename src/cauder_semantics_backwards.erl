@@ -30,7 +30,7 @@ step(#sys{mail = Ms, logs = LMap, trace = Trace, map = Map, hmap = Hmap} = Sys, 
   {#proc{pid = Pid, hist = [Entry | RestHist]} = P0, PMap} = maps:take(Pid, Sys#sys.procs),
 
   case Entry of
-    {Label, Bs, Es, Stk} when Label =:= tau orelse Label =:= self ->
+    {Label, Bs, Es, Stk} when Label =:= tau orelse Label =:= self orelse Label =:= fail->
       P = P0#proc{
         hist  = RestHist,
         stack = Stk,
@@ -165,6 +165,8 @@ process_option(_, #proc{hist = []}) ->
 process_option(_, #proc{pid = Pid, hist = [{tau, _Bs, _Es, _Stk} | _]}) ->
   #opt{sem = ?MODULE, pid = Pid, rule = ?RULE_SEQ};
 process_option(_, #proc{pid = Pid, hist = [{self, _Bs, _Es, _Stk} | _]}) ->
+  #opt{sem = ?MODULE, pid = Pid, rule = ?RULE_SELF};
+process_option(_, #proc{pid = Pid, hist = [{fail, _Bs, _Es, _Stk} | _]}) ->
   #opt{sem = ?MODULE, pid = Pid, rule = ?RULE_SELF};
 process_option(#sys{procs = PMap}, #proc{pid = Pid, hist = [{spawn, _Bs, _Es, _Stk, SpawnPid} | _]}) ->
   #proc{hist = Hist} = maps:get(SpawnPid, PMap),

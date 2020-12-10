@@ -44,7 +44,8 @@
                        | {spawn, environment(), [abstract_expr()], stack(), proc_id()}
                        | {send, environment(), [abstract_expr()], stack(), message()}
                        | {rec, environment(), [abstract_expr()], stack(), message()}
-                       | {'end', environment(), [abstract_expr()], stack(), map_element()}.
+                       | {'end', environment(), [abstract_expr()], stack(), map_element()}
+                       | {fail, environment(), [abstract_expr()], stack()}.
 
 
 -type history_map() :: [history_map_entry()].
@@ -71,7 +72,9 @@
                | {spawn, af_variable(), module(), atom(), [term()]}
                | {self, af_variable()}
                | {send, proc_id(), term()}
-               | {rec, af_variable(), af_clause_seq()}.
+               | {rec, af_variable(), af_clause_seq()}
+               | {bottom, line(), term()}.
+
 
 
 %% Custom of abstract format

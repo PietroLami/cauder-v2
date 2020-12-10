@@ -81,11 +81,6 @@ step(#sys{mail = Ms, logs = LMap, trace = Trace, map = Map, hmap = Hmap} = Sys, 
             procs = PMap#{Pid => P}
           }
       end;
-
-
-
-
-
     {self, VarPid} ->
       P = P0#proc{
         hist  = [{self, Bs0, Es0, Stk0} | Hist],
@@ -185,6 +180,16 @@ step(#sys{mail = Ms, logs = LMap, trace = Trace, map = Map, hmap = Hmap} = Sys, 
         procs = PMap#{Pid => P},
         logs  = LMap#{Pid => NewLog},
         trace = [T | Trace]
+      };
+    {bottom, Line, Fail} ->
+      P = P0#proc{
+        hist  = [{fail, Bs0, Es0, Stk0} | Hist],
+        stack = Stk,
+        env   = Bs,
+        exprs = [{value,Line, Fail}]
+      },
+      Sys#sys{
+        procs = PMap#{Pid => P}
       }
   end.
 
@@ -249,6 +254,7 @@ expression_option(Pid, [E0 | Es0], Bs, Stk, Log, Mail) ->
     true ->
       case E0 of
         {var, _, _} -> ?RULE_SEQ;
+        {fail, _, _} -> ?RULE_SEQ;
         {cons, _, H, T} ->
           case is_reducible(H, Bs) of
             true -> expression_option(Pid, H, Bs, Stk, Log, Mail);

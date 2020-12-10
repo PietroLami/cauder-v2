@@ -139,7 +139,9 @@ expr(Bs, {'if', Line, Cs}, Stk0) ->
       Var = cauder_utils:temp_variable(Line),
       Stk = [{'if', Body, Var} | Stk0],
       #result{env = Bs, exprs = [Var], stack = Stk};
-    nomatch -> error(if_clause)
+    nomatch -> %error(if_clause)
+      Fail = {value, Line, fail_if},
+      #result{ env = Bs, exprs = [Fail], stack = Stk0, label={bottom,Line,fail_if}}
   end;
 
 expr(Bs0, E = {'case', Line, A, Cs}, Stk0) ->
@@ -151,7 +153,9 @@ expr(Bs0, E = {'case', Line, A, Cs}, Stk0) ->
           Var = cauder_utils:temp_variable(Line),
           Stk = [{'case', Body, Var} | Stk0],
           #result{env = Bs, exprs = [Var], stack = Stk};
-        nomatch -> error({case_clause, concrete(A)})
+        nomatch -> %error({case_clause, concrete(A)})
+          Fail = {value, Line, fail_case},
+          #result{ env = Bs0, exprs = [Fail], stack = Stk0, label={bottom,Line,fail_case}}
       end
   end;
 
@@ -317,7 +321,7 @@ expr(Bs0, E = {apply_fun, Line, Fun, As}, Stk0) ->
       end
   end;
 
-expr(Bs0, E = {match, _, Lhs, Rhs}, Stk) ->
+expr(Bs0, E = {match, Line, Lhs, Rhs}, Stk) ->
   case is_reducible(Lhs, Bs0) of
     true -> eval_and_update({Bs0, Lhs, Stk}, {3, E});
     false ->
@@ -326,7 +330,9 @@ expr(Bs0, E = {match, _, Lhs, Rhs}, Stk) ->
         false ->
           case match(Bs0, [Lhs], [Rhs]) of
             {match, Bs} -> #result{env = Bs, exprs = [Rhs], stack = Stk};
-            nomatch -> error({badmatch, concrete(Rhs)})
+            nomatch -> %error({badmatch, concrete(Rhs)})
+              Fail = {value, Line, fail_match},
+              #result{ env = Bs0, exprs = [Fail], stack = Stk, label={bottom,Line,fail_match}}
           end
       end
   end;
