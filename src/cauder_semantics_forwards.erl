@@ -12,7 +12,7 @@
 -export([step/2, options/1]).
 
 -import(cauder_eval, [is_reducible/2]).
--import(cauder_utils, [matchMap/2, getPid/1]).
+-import(cauder_utils, [matchMap/2, getPid/2]).
 
 -include("cauder.hrl").
 
@@ -219,6 +219,36 @@ step(#sys{mail = Ms, logs = LMap, trace = Trace, map = Map, hmap = Hmap} = Sys, 
             hmap = Newh,
             map = NewMap
           }
+      end;
+    {unregister, IsFail, Line, A} ->
+      case IsFail of
+        true ->
+          P = P0#proc{
+            hist  = [{unregisterF, Bs0, Es0, Stk0, A} | Hist],
+            stack = Stk,
+            env   = Bs,
+            exprs = [{value,Line,unregisterFail}]
+          },
+          Newh = [{unregisterF, [A], Pid, []} | Hmap],
+          Sys#sys{
+            procs = PMap#{Pid => P},
+            hmap = Newh
+          };
+        false ->
+          Pi = getPid(A,Map),
+          P = P0#proc{
+            hist  = [{unregisterT, Bs0, Es0, Stk0, {A,Pi}} | Hist],
+            stack = Stk,
+            env   = Bs,
+            exprs = Es
+          },
+          Newh = [{unregisterT, [{A,Pi}], Pid, []} | Hmap],
+          NewMap = lists:delete({A,Pi}, Map),
+          Sys#sys{
+            procs = PMap#{Pid => P},
+            hmap = Newh,
+            map = NewMap
+          }
       end
   end.
 
@@ -403,6 +433,11 @@ expression_option(Pid, [E0 | Es0], Bs, Stk, Log, Mail) ->
                 true -> expression_option(Pid, R, Bs, Stk, Log, Mail);
                 false -> ?RULE_REGISTER
               end
+          end;
+        {unregister, _, L} ->
+          case is_reducible(L, Bs) of
+            true -> expression_option(Pid, L, Bs, Stk, Log, Mail);
+            false -> ?RULE_UNREGISTER
           end
       end
   end.

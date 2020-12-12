@@ -19,7 +19,7 @@
 -export([current_line/1, is_dead/1]).
 -export([is_conc_item/1]).
 -export([matchMap/2]).
--export([rule_mapW/2]).
+-export([rule_mapW/2, rule_mapR/2]).
 -export([mapActor/1]).
 -export([getPid/2]).
 
@@ -546,6 +546,8 @@ is_conc_item({send, _Bs, _Es, _Stk, _Msg})       -> true;
 is_conc_item({rec, _Bs, _Es, _Stk, _Msg})        -> true;
 is_conc_item({registerT, _Bs, _Es, _Stk, _El})   -> true;
 is_conc_item({registerF, _Bs, _Es, _Stk, _El})   -> true;
+is_conc_item({unregisterT, _Bs, _Es, _Stk, _El}) -> true;
+is_conc_item({unregisterF, _Bs, _Es, _Stk, _El}) -> true;
 is_conc_item(_)                                  -> false.
 
 
@@ -563,6 +565,18 @@ rule_mapW({Rule, [{A,P}], Pid, []}, [ {_, L, _, _} | T]) ->
     true  -> rule_mapW({Rule, [{A,P}], Pid, []},T);
     false -> false
   end.
+
+
+rule_mapR(Rule,[Rule | _]) -> true;
+rule_mapR({Rule, El, Pid, _}, [ {RuleW, L, _, _} | T]) when RuleW =:= registerT orelse RuleW =:= unregisterT orelse RuleW =:= 'end' ->
+  case not_in(L, El) of
+    true  -> rule_mapR({Rule, El, Pid, []}, T);
+    false -> false
+  end;
+rule_mapR(Rule, [ _ | T]) ->
+  rule_mapR(Rule,T).
+
+
 
 not_in(_, []) -> true;
 not_in({_,P}, [{_,P} | _]) -> false;

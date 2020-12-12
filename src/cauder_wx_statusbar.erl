@@ -491,7 +491,8 @@ rule_to_string(?RULE_SPAWN)   -> "Spawn";
 rule_to_string(?RULE_SEND)    -> "Send";
 rule_to_string(?RULE_RECEIVE) -> "Receive";
 rule_to_string(?RULE_END)     -> "End";
-rule_to_string(?RULE_REGISTER) -> "Register".
+rule_to_string(?RULE_REGISTER) -> "Register";
+rule_to_string(?RULE_UNREGISTER) -> "Unregister".
 
 
 -spec time_to_string(Time) -> String when

@@ -226,6 +226,8 @@ expr({call, Anno, {remote, _, {atom, _, erlang}, {atom, _, send}}, [Dest, Msg]})
   {send, ln(Anno), expr(Dest), expr(Msg)};
 expr({call, Anno, {remote, _, {atom, _, erlang}, {atom, _, register}}, [Atom, Pid]}) ->
   {register, ln(Anno), expr(Atom), expr(Pid)};
+expr({call, Anno, {remote, _, {atom, _, erlang}, {atom, _, unregister}}, [Atom]}) ->
+  {unregister, ln(Anno), expr(Atom)};
 expr({call, Anno, {remote, _, {atom, _, Mod}, {atom, _, Func}}, As0}) ->
   As = expr_list(As0),
   case erlang:is_builtin(Mod, Func, length(As)) of
@@ -407,6 +409,9 @@ replace_variable({register, Line, L0, R0}, Var, Val) ->
   L = replace_variable(L0, Var, Val),
   R = replace_variable(R0, Var, Val),
   {register, Line, L, R};
+replace_variable({unregister, Line, P0}, Var, Val) ->
+  P = replace_variable(P0, Var, Val),
+  {unregister, Line, P};
 replace_variable({local_call, Line, F, As0}, Var, Val) ->
   As = replace_variable(As0, Var, Val),
   {local_call, Line, F, As};
@@ -510,6 +515,9 @@ to_abstract_expr({send_op, Line, L, R}) ->
   set_line(Node, Line);
 to_abstract_expr({register, Line, L, R}) ->
   Node = erl_syntax:application(erl_syntax:atom(erlang), erl_syntax:atom(register), [to_abstract_expr(L), to_abstract_expr(R)]),
+  set_line(Node, Line);
+to_abstract_expr({unregister, Line, P}) ->
+  Node = erl_syntax:application(erl_syntax:atom(erlang), erl_syntax:atom(unregister), [to_abstract_expr(P)]),
   set_line(Node, Line);
 to_abstract_expr({local_call, Line, F, As}) ->
   Node = erl_syntax:application(erl_syntax:atom(F), to_abstract_expr(As)),

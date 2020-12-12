@@ -7,7 +7,7 @@
 
 %% API
 -export([step/2, options/1]).
--import(cauder_utils, [rule_mapW/2]).
+-import(cauder_utils, [rule_mapW/2, rule_mapR/2]).
 
 -include("cauder.hrl").
 
@@ -147,6 +147,32 @@ step(#sys{mail = Ms, logs = LMap, trace = Trace, map = Map, hmap = Hmap} = Sys, 
       Sys#sys{
         procs = PMap#{Pid => P},
         hmap = NewHMap
+      };
+    {unregisterT, Bs, Es, Stk, {A,Pi}} ->
+      P = P0#proc{
+        hist  = RestHist,
+        stack = Stk,
+        env   = Bs,
+        exprs = Es
+      },
+      NewMap = [{A,Pi} | Map],
+      NewHMap = lists:delete({unregisterT, [{A,Pi}], Pid, []}, Hmap),
+      Sys#sys{
+        procs = PMap#{Pid => P},
+        map = NewMap,
+        hmap = NewHMap
+      };
+    {unregisterF, Bs, Es, Stk, A} ->
+      P = P0#proc{
+        hist  = RestHist,
+        stack = Stk,
+        env   = Bs,
+        exprs = Es
+      },
+      NewHMap = lists:delete({unregisterF, [A], Pid, []}, Hmap),
+      Sys#sys{
+        procs = PMap#{Pid => P},
+        hmap = NewHMap
       }
   end.
 
@@ -218,7 +244,17 @@ process_option(#sys{hmap = Hmap}, #proc{pid = Pid, hist = [{registerT, _Bs, _Es,
     false ->   ?NULL_OPT
   end;
 process_option(#sys{hmap = Hmap}, #proc{pid = Pid, hist = [{registerF, _Bs, _Es, _Stk, El}| _]}) ->
-  case cauder_utils:rule_mapW({registerF, [El], Pid, []}, Hmap) of
+  case cauder_utils:rule_mapR({registerF, [El], Pid, []}, Hmap) of
     true  ->   #opt{sem = ?MODULE, pid = Pid, rule = ?RULE_REGISTER};
+    false ->   ?NULL_OPT
+  end;
+process_option(#sys{hmap = Hmap}, #proc{pid = Pid, hist = [{unregisterT, _Bs, _Es, _Stk, El}| _]}) ->
+  case cauder_utils:rule_mapW({unregisterT, [El], Pid, []}, Hmap) of
+    true  ->   #opt{sem = ?MODULE, pid = Pid, rule = ?RULE_UNREGISTER};
+    false ->   ?NULL_OPT
+  end;
+process_option(#sys{hmap = Hmap}, #proc{pid = Pid, hist = [{unregisterF, _Bs, _Es, _Stk, El}| _]}) ->
+  case cauder_utils:rule_mapR({unregisterF, [El], Pid, []}, Hmap) of
+    true  ->   #opt{sem = ?MODULE, pid = Pid, rule = ?RULE_UNREGISTER};
     false ->   ?NULL_OPT
   end.

@@ -24,6 +24,7 @@
 -define(RULE_RECEIVE, 'receive').
 -define(RULE_END, 'end').
 -define(RULE_REGISTER, register).
+-define(RULE_UNREGISTER, unregister).
 
 
 
