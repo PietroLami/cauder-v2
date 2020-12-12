@@ -49,7 +49,8 @@
                        | {registerT, environment(), [abstract_expr()], stack(), map_element()}
                        | {registerF, environment(), [abstract_expr()], stack(), map_element()}
                        | {unregisterT, environment(), [abstract_expr()], stack(), map_element()}
-                       | {unregisterF, environment(), [abstract_expr()], stack(), atom()}.
+                       | {unregisterF, environment(), [abstract_expr()], stack(), atom()}
+                       | {tauM, environment(), [abstract_expr()], stack(), [map_element()]}.
 
 
 
@@ -58,7 +59,8 @@
                            | {registerT,   [map_element()], proc_id(), []}
                            | {registerF,   [map_element()], proc_id(), []}
                            | {unregisterT, [map_element()], proc_id(), []}
-                           | {unregisterF, [atom()],        proc_id(), []}.
+                           | {unregisterF, [atom()],        proc_id(), []}
+                           | {tauM,        [map_element()], proc_id(), []}.
 
 
 -type stack() :: [stack_entry()].
@@ -84,7 +86,8 @@
                | {rec, af_variable(), af_clause_seq()}
                | {bottom, line(), term()}
                | {register, atom(), line(),atom(), proc_id()}
-               | {unregister, atom(), line(), atom()}.
+               | {unregister, atom(), line(), atom()}
+               | {tauM, term()}.
 
 
 
@@ -114,7 +117,8 @@
                        | af_op(abstract_expr())
                        | af_short_circuit_op(abstract_expr())
                        | af_register()
-                       | af_unregister().
+                       | af_unregister()
+                       | af_tauM().
 
 -type af_args() :: [abstract_expr()].
 
@@ -166,6 +170,7 @@
 
 -type af_unregister() :: {unregister, line(), abstract_expr()}.
 
+-type af_tauM() :: {tauM, line(), af_args()}.
 
 %% Clauses
 

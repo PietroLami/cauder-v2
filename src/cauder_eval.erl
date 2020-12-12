@@ -413,7 +413,22 @@ expr(Bs, E = {unregister, L, Atom}, Stk) ->
        end,
        Label = {unregister, IsFail, L, concrete(Atom)},
        #result{env = Bs, exprs = [{value,L,K}], stack = Stk, label = Label}
+  end;
+
+expr(Bs, {tauM, Line, []}, Stk) ->
+  mymaps ! {map,self()},
+  Map = receive M->M end,
+  #result{env = Bs, exprs = [{value,Line, Map}], stack = Stk, label = {tauM, []} };
+
+expr(Bs, E = {tauM, Line, Args}, Stk) ->
+  case is_reducible(Args,Bs) of
+    true -> eval_and_update({Bs, Args, Stk}, {3, E});
+    false ->
+      mymaps ! {pid, concrete(Args), self()},
+      Pid = receive M->M end,
+      #result{env = Bs, exprs = [{value,Line, Pid}], stack = Stk, label = {tauM, {concrete(Args),Pid} } }
   end.
+
 
 %%%=============================================================================
 

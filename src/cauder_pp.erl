@@ -55,7 +55,8 @@ history_entry({fail, _Bs, _Es, _Stk})                             -> "fail";
 history_entry({registerT, _Bs, _Es, _Stk, {A,P}})                 -> "registerT(" ++ green(to_string(A)) ++ "," ++ green(to_string(P)) ++ ")";
 history_entry({registerF, _Bs, _Es, _Stk, {A,P}})                 -> "registerF(" ++ red(to_string(A)) ++ "," ++ red(to_string(P)) ++ ")";
 history_entry({unregisterT, _Bs, _Es, _Stk, {A,_P}})              -> "unregisterT(" ++ green(to_string(A)) ++ ")";
-history_entry({unregisterF, _Bs, _Es, _Stk, A})                   -> "unregisterF(" ++ red(to_string(A)) ++ ")".
+history_entry({unregisterF, _Bs, _Es, _Stk, A})                   -> "unregisterF(" ++ red(to_string(A)) ++ ")";
+history_entry({tauM, _Bs, _Es, _Stk, El})                         -> "seqMap("++ to_string(El) ++ ")".
 
 
 %%%=============================================================================

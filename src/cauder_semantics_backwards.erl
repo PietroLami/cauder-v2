@@ -173,7 +173,19 @@ step(#sys{mail = Ms, logs = LMap, trace = Trace, map = Map, hmap = Hmap} = Sys, 
       Sys#sys{
         procs = PMap#{Pid => P},
         hmap = NewHMap
-      }
+      };
+    {tauM, Bs, Es, Stk, El} ->
+    P = P0#proc{
+      hist  = RestHist,
+      stack = Stk,
+      env   = Bs,
+      exprs = Es
+    },
+    NewHMap = lists:delete({tauM, El, Pid, []}, Hmap),
+    Sys#sys{
+      procs = PMap#{Pid => P},
+      hmap = NewHMap
+    }
   end.
 
 
@@ -256,5 +268,10 @@ process_option(#sys{hmap = Hmap}, #proc{pid = Pid, hist = [{unregisterT, _Bs, _E
 process_option(#sys{hmap = Hmap}, #proc{pid = Pid, hist = [{unregisterF, _Bs, _Es, _Stk, El}| _]}) ->
   case cauder_utils:rule_mapR({unregisterF, [El], Pid, []}, Hmap) of
     true  ->   #opt{sem = ?MODULE, pid = Pid, rule = ?RULE_UNREGISTER};
+    false ->   ?NULL_OPT
+  end;
+process_option(#sys{hmap = Hmap}, #proc{pid = Pid, hist = [{tauM, _Bs, _Es, _Stk, El}| _]}) ->
+  case cauder_utils:rule_mapR({tauM, El, Pid, []}, Hmap) of
+    true  ->   #opt{sem = ?MODULE, pid = Pid, rule = ?RULE_SEQ};
     false ->   ?NULL_OPT
   end.

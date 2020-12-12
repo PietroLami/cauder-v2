@@ -548,6 +548,7 @@ is_conc_item({registerT, _Bs, _Es, _Stk, _El})   -> true;
 is_conc_item({registerF, _Bs, _Es, _Stk, _El})   -> true;
 is_conc_item({unregisterT, _Bs, _Es, _Stk, _El}) -> true;
 is_conc_item({unregisterF, _Bs, _Es, _Stk, _El}) -> true;
+is_conc_item({tauM, _Bs, _Es, _Stk, _El})        -> true;
 is_conc_item(_)                                  -> false.
 
 

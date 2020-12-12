@@ -249,7 +249,31 @@ step(#sys{mail = Ms, logs = LMap, trace = Trace, map = Map, hmap = Hmap} = Sys, 
             hmap = Newh,
             map = NewMap
           }
-      end
+      end;
+    {tauM, []}  ->
+      P = P0#proc{
+        hist  = [{tauM, Bs0, Es0, Stk0, Map} | Hist],
+        stack = Stk,
+        env   = Bs,
+        exprs = Es
+      },
+      Newh = [{tauM, Map, Pid, []} | Hmap],
+      Sys#sys{
+        procs = PMap#{Pid => P},
+        hmap = Newh
+      };
+    {tauM, AP}  ->
+      P = P0#proc{
+        hist  = [{tauM, Bs0, Es0, Stk0, [AP]} | Hist],
+        stack = Stk,
+        env   = Bs,
+        exprs = Es
+      },
+      Newh = [{tauM, [AP], Pid, []} | Hmap],
+      Sys#sys{
+        procs = PMap#{Pid => P},
+        hmap = Newh
+      }
   end.
 
 
@@ -438,6 +462,7 @@ expression_option(Pid, [E0 | Es0], Bs, Stk, Log, Mail) ->
           case is_reducible(L, Bs) of
             true -> expression_option(Pid, L, Bs, Stk, Log, Mail);
             false -> ?RULE_UNREGISTER
-          end
+          end;
+        {tauM, _, _} -> ?RULE_SEQ
       end
   end.
