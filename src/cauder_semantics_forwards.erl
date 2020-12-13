@@ -121,39 +121,92 @@ step(#sys{mail = Ms, logs = LMap, trace = Trace, map = Map, hmap = Hmap} = Sys, 
         logs  = LMap#{Pid => NewLog},
         trace = [T | Trace]
       };
-    {send, Dest, Val} ->
-      {Uid, NewLog} =
-        case LMap of
-          #{Pid := [{send, LogUid} | RestLog]} ->
-            {LogUid, RestLog};
-          _ ->
-            {cauder_utils:fresh_uid(), []}
-        end,
+    {send, Dest, Val, Line} ->
+      case is_atom(Dest) of
+        true  ->
+          case cauder_utils:getPid(Dest,Map) of
+            undefined  -> %SendF
+              P = P0#proc{
+                hist  = [{sendF, Bs0, Es0, Stk0, Dest} | Hist],
+                stack = Stk,
+                env   = Bs,
+                exprs = [{value, Line, sendFail}]
+              },
+              NewHMap = [{sendF, [Dest], Pid, []}| Hmap],
+              Sys#sys{
+                procs = PMap#{Pid => P},
+                hmap = NewHMap
+              };
+            Pi -> %SendA
+              {Uid, NewLog} =
+                case LMap of
+                  #{Pid := [{send, LogUid} | RestLog]} ->
+                    {LogUid, RestLog};
+                  _ ->
+                    {cauder_utils:fresh_uid(), []}
+                end,
 
-      M = #msg{
-        dest = Dest,
-        val  = Val,
-        uid  = Uid
-      },
-      P = P0#proc{
-        hist  = [{send, Bs0, Es0, Stk0, M} | Hist],
-        stack = Stk,
-        env   = Bs,
-        exprs = Es
-      },
-      T = #trace{
-        type = ?RULE_SEND,
-        from = Pid,
-        to   = Dest,
-        val  = Val,
-        time = Uid
-      },
-      Sys#sys{
-        mail  = [M | Ms],
-        procs = PMap#{Pid => P},
-        logs  = LMap#{Pid => NewLog},
-        trace = [T | Trace]
-      };
+              M = #msg{
+                dest = Pi,
+                val  = Val,
+                uid  = Uid
+              },
+              P = P0#proc{
+                hist  = [{sendA, Bs0, Es0, Stk0, M, {Dest, Pi}} | Hist],
+                stack = Stk,
+                env   = Bs,
+                exprs = Es
+              },
+              T = #trace{
+                type = ?RULE_SEND,
+                from = Pid,
+                to   = Pi,
+                val  = Val,
+                time = Uid
+              },
+              NewHMap = [{sendA, [{Dest,Pi}], Pid, M} | Hmap],
+              Sys#sys{
+                mail  = [M | Ms],
+                procs = PMap#{Pid => P},
+                logs  = LMap#{Pid => NewLog},
+                hmap = NewHMap,
+                trace = [T | Trace]
+              }
+          end;
+        false -> %send
+          {Uid, NewLog} =
+            case LMap of
+              #{Pid := [{send, LogUid} | RestLog]} ->
+                {LogUid, RestLog};
+              _ ->
+                {cauder_utils:fresh_uid(), []}
+            end,
+
+          M = #msg{
+            dest = Dest,
+            val  = Val,
+            uid  = Uid
+          },
+          P = P0#proc{
+            hist  = [{send, Bs0, Es0, Stk0, M} | Hist],
+            stack = Stk,
+            env   = Bs,
+            exprs = Es
+          },
+          T = #trace{
+            type = ?RULE_SEND,
+            from = Pid,
+            to   = Dest,
+            val  = Val,
+            time = Uid
+          },
+          Sys#sys{
+            mail  = [M | Ms],
+            procs = PMap#{Pid => P},
+            logs  = LMap#{Pid => NewLog},
+            trace = [T | Trace]
+          }
+      end;
     {rec, VarBody, Cs} when Es == [VarBody] ->
       {{Bs1, Es1, M = #msg{dest = Pid, val = Val, uid = Uid}, Ms1}, NewLog} =
         case LMap of

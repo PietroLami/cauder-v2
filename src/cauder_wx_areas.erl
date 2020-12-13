@@ -33,6 +33,7 @@ create(Frame) ->
   ProcessPanel = cauder_wx_process:create(Win),
   SystemPanel = cauder_wx_system:create(Win),
 
+  MapPanel = cauder_wx_map:create(Win),
   % ----- Left ----- %
 
   Left = wxBoxSizer:new(?wxVERTICAL),
@@ -41,6 +42,9 @@ create(Frame) ->
   wxSizer:add(Left, CodePanel, [{proportion, 1}, {flag, ?wxEXPAND}]),
   wxSizer:addSpacer(Left, ?SPACER_MEDIUM),
   wxSizer:add(Left, ProcessPanel, [{proportion, 1}, {flag, ?wxEXPAND}]),
+
+  wxSizer:addSpacer(Left, ?SPACER_MEDIUM),
+  wxSizer:add(Left, MapPanel, [{proportion, 1}, {flag, ?wxEXPAND}]),
 
   % -----
 

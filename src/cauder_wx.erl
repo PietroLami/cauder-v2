@@ -772,7 +772,7 @@ refresh(OldState, NewState) ->
   cauder_wx_actions:update(OldState, State),
   cauder_wx_process:update(OldState, State),
   cauder_wx_system:update(OldState, State),
-
+  cauder_wx_map:update(OldState, State),
   State.
 
 

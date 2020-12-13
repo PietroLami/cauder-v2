@@ -80,6 +80,41 @@ step(#sys{mail = Ms, logs = LMap, trace = Trace, map = Map, hmap = Hmap} = Sys, 
         logs  = maps:update_with(Pid, fun(Log) -> [{send, Uid} | Log] end, [], LMap),
         trace = lists:delete(T, Trace)
       };
+    {sendA, Bs, Es, Stk, M = #msg{dest = Dest, val = Val, uid = Uid}, {A,Pi}} ->
+      {_Msg, OldMsgs} = cauder_utils:take_message(Ms, Uid),
+      P = P0#proc{
+        hist  = RestHist,
+        stack = Stk,
+        env   = Bs,
+        exprs = Es
+      },
+      T = #trace{
+        type = ?RULE_SEND,
+        from = Pid,
+        to   = Dest,
+        val  = Val,
+        time = Uid
+      },
+      NewHMap = lists:delete({sendA, [{A,Pi}], Pid, M}, Hmap),
+      Sys#sys{
+        mail  = OldMsgs,
+        procs = PMap#{Pid => P},
+        logs  = maps:update_with(Pid, fun(Log) -> [{send, Uid} | Log] end, [], LMap),
+        hmap = NewHMap,
+        trace = lists:delete(T, Trace)
+      };
+    {sendF, Bs, Es, Stk, A} ->
+      P = P0#proc{
+        hist  = RestHist,
+        stack = Stk,
+        env   = Bs,
+        exprs = Es
+      },
+      NewHMap = lists:delete({sendF, [A], Pid, []}, Hmap),
+      Sys#sys{
+        procs = PMap#{Pid => P},
+        hmap = NewHMap
+      };
     {rec, Bs, Es, Stk, M = #msg{dest = Pid, val = Val, uid = Uid}} ->
       P = P0#proc{
         hist  = RestHist,
@@ -175,17 +210,17 @@ step(#sys{mail = Ms, logs = LMap, trace = Trace, map = Map, hmap = Hmap} = Sys, 
         hmap = NewHMap
       };
     {tauM, Bs, Es, Stk, El} ->
-    P = P0#proc{
-      hist  = RestHist,
-      stack = Stk,
-      env   = Bs,
-      exprs = Es
-    },
-    NewHMap = lists:delete({tauM, El, Pid, []}, Hmap),
-    Sys#sys{
-      procs = PMap#{Pid => P},
-      hmap = NewHMap
-    }
+      P = P0#proc{
+        hist  = RestHist,
+        stack = Stk,
+        env   = Bs,
+        exprs = Es
+      },
+      NewHMap = lists:delete({tauM, El, Pid, []}, Hmap),
+      Sys#sys{
+        procs = PMap#{Pid => P},
+        hmap = NewHMap
+      }
   end.
 
 
@@ -273,5 +308,21 @@ process_option(#sys{hmap = Hmap}, #proc{pid = Pid, hist = [{unregisterF, _Bs, _E
 process_option(#sys{hmap = Hmap}, #proc{pid = Pid, hist = [{tauM, _Bs, _Es, _Stk, El}| _]}) ->
   case cauder_utils:rule_mapR({tauM, El, Pid, []}, Hmap) of
     true  ->   #opt{sem = ?MODULE, pid = Pid, rule = ?RULE_SEQ};
+    false ->   ?NULL_OPT
+  end;
+
+process_option(#sys{mail = Mail, hmap = Hmap}, #proc{pid = Pid, hist = [{sendA, _Bs, _Es, _Stk, M = #msg{uid = Uid}, El} | _]}) ->
+  case cauder_utils:rule_mapR({sendA, [El], Pid, M}, Hmap) of
+    true  ->
+      case cauder_utils:find_message(Mail, Uid) of
+        {value, _} -> #opt{sem = ?MODULE, pid = Pid, rule = ?RULE_SEND};
+        false -> ?NULL_OPT
+      end;
+    false ->   ?NULL_OPT
+  end;
+
+process_option(#sys{ hmap = Hmap}, #proc{pid = Pid, hist = [{sendF, _Bs, _Es, _Stk, El} | _]}) ->
+  case cauder_utils:rule_mapR({sendF, [El], Pid, []}, Hmap) of
+    true  ->   #opt{sem = ?MODULE, pid = Pid, rule = ?RULE_SEND};
     false ->   ?NULL_OPT
   end.

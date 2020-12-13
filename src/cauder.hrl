@@ -25,6 +25,8 @@
 -define(RULE_END, 'end').
 -define(RULE_REGISTER, register).
 -define(RULE_UNREGISTER, unregister).
+-define(RULE_SENDF,     sendF).
+
 
 
 

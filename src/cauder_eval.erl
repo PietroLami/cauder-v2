@@ -231,14 +231,14 @@ expr(Bs, E = {spawn, Line, M, F, As}, Stk) ->
       end
   end;
 
-expr(Bs, E = {Send, _, L, R}, Stk) when Send =:= 'send' orelse Send =:= 'send_op' ->
+expr(Bs, E = {Send, Line, L, R}, Stk) when Send =:= 'send' orelse Send =:= 'send_op' ->
   case is_reducible(L, Bs) of
     true -> eval_and_update({Bs, L, Stk}, {3, E});
     false ->
       case is_reducible(R, Bs) of
         true -> eval_and_update({Bs, R, Stk}, {4, E});
         false ->
-          Label = {send, concrete(L), concrete(R)},
+          Label = {send, concrete(L), concrete(R), Line},
           #result{env = Bs, exprs = [R], stack = Stk, label = Label}
       end
   end;

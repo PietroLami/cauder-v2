@@ -56,6 +56,8 @@ history_entry({registerT, _Bs, _Es, _Stk, {A,P}})                 -> "registerT(
 history_entry({registerF, _Bs, _Es, _Stk, {A,P}})                 -> "registerF(" ++ red(to_string(A)) ++ "," ++ red(to_string(P)) ++ ")";
 history_entry({unregisterT, _Bs, _Es, _Stk, {A,_P}})              -> "unregisterT(" ++ green(to_string(A)) ++ ")";
 history_entry({unregisterF, _Bs, _Es, _Stk, A})                   -> "unregisterF(" ++ red(to_string(A)) ++ ")";
+history_entry({sendA, _Bs, _Es, _Stk, #msg{val = Val, uid = Uid}, _El}) -> "sendA(" ++ to_string(Val) ++ "," ++ red(to_string(Uid)) ++ ")";
+history_entry({sendF, _Bs, _Es, _Stk, El})                        -> "sendF(" ++ to_string(El) ++ ")";
 history_entry({tauM, _Bs, _Es, _Stk, El})                         -> "seqMap("++ to_string(El) ++ ")".
 
 

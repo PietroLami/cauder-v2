@@ -186,10 +186,13 @@
 -define(SYSTEM_Notebook, 2210).
 -define(SYSTEM_Notebook_Trace, 0).
 -define(SYSTEM_Notebook_RollLog, 1).
+-define(SYSTEM_Notebook_Map, 2).
+-define(SYSTEM_Notebook_HMap, 3).
 
 -define(SYSTEM_Trace, 2211).
 -define(SYSTEM_RollLog, 2212).
-
+-define(SYSTEM_Map, 22113).
+-define(SYSTEM_HMap, 2214).
 
 %% ----- Process Info Panel ----- %%
 

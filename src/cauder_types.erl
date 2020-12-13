@@ -43,6 +43,8 @@
                        | {self, environment(), [abstract_expr()], stack()}
                        | {spawn, environment(), [abstract_expr()], stack(), proc_id()}
                        | {send, environment(), [abstract_expr()], stack(), message()}
+                       | {sendA, environment(), [abstract_expr()], stack(), message(), map_element()}
+                       | {sendF, environment(), [abstract_expr()], stack(), atom()}
                        | {rec, environment(), [abstract_expr()], stack(), message()}
                        | {'end', environment(), [abstract_expr()], stack(), map_element()}
                        | {fail, environment(), [abstract_expr()], stack()}
@@ -60,8 +62,9 @@
                            | {registerF,   [map_element()], proc_id(), []}
                            | {unregisterT, [map_element()], proc_id(), []}
                            | {unregisterF, [atom()],        proc_id(), []}
-                           | {tauM,        [map_element()], proc_id(), []}.
-
+                           | {tauM,        [map_element()], proc_id(), []}
+                           | {sendF,       [atom()],        proc_id(), []}
+                           | {sendA,       [map_element()], proc_id(), message()}.
 
 -type stack() :: [stack_entry()].
 -type stack_entry() :: {mfa(), environment(), [abstract_expr()], af_variable()}
@@ -82,7 +85,7 @@
                | {spawn, af_variable(), function()}
                | {spawn, af_variable(), module(), atom(), [term()]}
                | {self, af_variable()}
-               | {send, proc_id(), term()}
+               | {send, proc_id(), term(), line()}
                | {rec, af_variable(), af_clause_seq()}
                | {bottom, line(), term()}
                | {register, atom(), line(),atom(), proc_id()}
